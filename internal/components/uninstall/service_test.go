@@ -39,6 +39,7 @@ func TestUninstallOpenCodeFamilyManagedAgents(t *testing.T) {
 		t.Run(string(agent), func(t *testing.T) {
 			home := t.TempDir()
 			t.Setenv("HOME", home)
+			t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 			svc, err := NewService(home, t.TempDir(), "dev")
 			if err != nil {
 				t.Fatal(err)
@@ -120,6 +121,7 @@ func TestCompleteUninstallLegacyOpenCodeDefaultOwnership(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			home := t.TempDir()
 			t.Setenv("HOME", home)
+			t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 			settings := opencode.NewAdapter().SettingsPath(home)
 			if err := os.MkdirAll(filepath.Dir(settings), 0700); err != nil {
 				t.Fatal(err)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/gentleman-programming/gentle-ai/v3/internal/agents/claude"
@@ -114,6 +115,9 @@ func TestMain(m *testing.M) {
 	if err := os.Setenv("USERPROFILE", testHome); err != nil {
 		panic(err)
 	}
+	if err := os.Setenv("XDG_CONFIG_HOME", filepath.Join(testHome, ".config")); err != nil {
+		panic(err)
+	}
 
 	verifyEngramVersion = func() (string, error) {
 		return "", errors.New("engram version not available in tests")
@@ -150,6 +154,9 @@ func TestMain(m *testing.M) {
 	telemetry.DefaultSpawn = telemetryTestSpawnRecorder.Spawn
 
 	code := m.Run()
+	if reviewCLIRepoTemplateDir != "" {
+		_ = os.RemoveAll(reviewCLIRepoTemplateDir)
+	}
 	_ = os.RemoveAll(testHome)
 	os.Exit(code)
 }

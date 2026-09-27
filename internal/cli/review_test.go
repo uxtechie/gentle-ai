@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gentleman-programming/gentle-ai/v3/internal/reviewtransaction"
@@ -251,19 +253,58 @@ func canonicalReviewCLITempDir(t *testing.T) string {
 	return dir
 }
 
+var (
+	reviewCLIRepoTemplateOnce sync.Once
+	reviewCLIRepoTemplateDir  string
+	reviewCLIRepoTemplateErr  error
+)
+
 func initReviewCLIRepo(t *testing.T) string {
 	t.Helper()
-	repo := canonicalReviewCLITempDir(t)
-	runReviewCLIGit(t, repo, "init", "-q")
-	runReviewCLIGit(t, repo, "config", "user.email", "test@example.com")
-	runReviewCLIGit(t, repo, "config", "user.name", "Test")
-	runReviewCLIGit(t, repo, "config", "core.autocrlf", "false")
-	if err := os.WriteFile(filepath.Join(repo, "tracked.txt"), []byte("base\n"), 0o644); err != nil {
-		t.Fatal(err)
+	reviewCLIRepoTemplateOnce.Do(func() {
+		reviewCLIRepoTemplateDir, reviewCLIRepoTemplateErr = createReviewCLIRepoTemplate()
+	})
+	if reviewCLIRepoTemplateErr != nil {
+		t.Fatalf("create review CLI repository template: %v", reviewCLIRepoTemplateErr)
 	}
-	runReviewCLIGit(t, repo, "add", "tracked.txt")
-	runReviewCLIGit(t, repo, "commit", "-qm", "base")
+	repo := canonicalReviewCLITempDir(t)
+	if err := os.CopyFS(repo, os.DirFS(reviewCLIRepoTemplateDir)); err != nil {
+		t.Fatalf("copy review CLI repository template: %v", err)
+	}
 	return repo
+}
+
+func createReviewCLIRepoTemplate() (string, error) {
+	repo, err := os.MkdirTemp("", "gentle-ai-review-cli-template-*")
+	if err != nil {
+		return "", err
+	}
+	cleanup := func(err error) (string, error) {
+		_ = os.RemoveAll(repo)
+		return "", err
+	}
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"config", "--local", "core.fsmonitor", "false"},
+		{"config", "--local", "core.untrackedCache", "false"},
+		{"config", "--local", "maintenance.auto", "false"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test"},
+		{"config", "core.autocrlf", "false"},
+	} {
+		if output, err := exec.Command("git", append([]string{"-C", repo}, args...)...).CombinedOutput(); err != nil {
+			return cleanup(fmt.Errorf("git %v: %w: %s", args, err, output))
+		}
+	}
+	if err := os.WriteFile(filepath.Join(repo, "tracked.txt"), []byte("base\n"), 0o644); err != nil {
+		return cleanup(err)
+	}
+	for _, args := range [][]string{{"add", "tracked.txt"}, {"commit", "-qm", "base"}} {
+		if output, err := exec.Command("git", append([]string{"-C", repo}, args...)...).CombinedOutput(); err != nil {
+			return cleanup(fmt.Errorf("git %v: %w: %s", args, err, output))
+		}
+	}
+	return repo, nil
 }
 
 func runReviewCLIGit(t *testing.T, repo string, args ...string) string {
