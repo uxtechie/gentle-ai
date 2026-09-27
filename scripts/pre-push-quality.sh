@@ -35,17 +35,28 @@ trap cleanup EXIT
 count=0
 
 check() {
-  local name=$1 log
+  local name=$1 log start
   shift
   count=$((count + 1))
   log="$work/$(printf '%02d' "$count").log"
+  start=$SECONDS
   if "$@" >"$log" 2>&1; then
-    printf '  PASS %s\n' "$name"
+    printf '  PASS %s (%ss)\n' "$name" "$((SECONDS - start))"
   else
-    printf '  FAIL %s (last 20 lines; full log: %s)\n' "$name" "$log" >&2
+    printf '  FAIL %s (%ss; last 20 lines; full log: %s)\n' "$name" "$((SECONDS - start))" "$log" >&2
     tail -n 20 "$log" >&2
     return 1
   fi
+}
+
+go_tests() {
+  local status=0
+  python3 scripts/run_go_tests.py >"$work/go-tests.json" 2>&1 || status=$?
+  python3 scripts/go_test_timings.py "$work/go-tests.json"
+  if [ "$status" -ne 0 ]; then
+    printf 'Raw Go test events: %s\n' "$work/go-tests.json"
+  fi
+  return "$status"
 }
 
 bench_module() {
@@ -86,7 +97,7 @@ transition_evidence() {
 printf 'pre-push: running local quality checks (full logs kept only on failure)\n'
 check 'Go format' go run ./internal/gofmtcheck
 check 'Go vet' go vet ./...
-check 'Go tests' go test ./...
+check 'Go tests' go_tests
 check 'PR workflow script tests' node --test .github/scripts/parse-linked-issues.test.cjs .github/scripts/check-pr-size.test.cjs
 check 'Installer module path' bash scripts/test-install-module-path.sh
 check 'OpenCode V2 host tests' python3 -B -m unittest discover -s scripts -p test_opencode_v2_host_test.py
