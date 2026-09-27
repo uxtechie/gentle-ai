@@ -104,7 +104,6 @@ For disclosure boundaries, required details, attribution rules, and reviewer exp
 ### Prerequisites
 
 - Go 1.25.10+
-- Docker (for E2E tests)
 - Git 2.38+
 
 ### Clone and Build
@@ -145,17 +144,27 @@ Run with verbose output:
 go test -v ./...
 ```
 
-### E2E Tests
+### Local pre-push checks
 
-E2E tests are Docker-based shell scripts. Docker must be running.
+Install [Lefthook](https://lefthook.dev/installation/) and activate this checkout's hook once:
 
 ```bash
-cd e2e
-chmod +x docker-test.sh
-./docker-test.sh
+lefthook install
 ```
 
-> ⚠️ E2E tests spin up containers to simulate real installation environments. They may take a few minutes to complete.
+Pushing changed files then runs `scripts/pre-push-quality.sh`. To run it without pushing, use `lefthook run pre-push --force` (otherwise Lefthook skips a manual run with no push files). Commit your changes first: the hook requires a clean worktree so it tests the candidate being pushed. It checks Go formatting, vet and tests; PR workflow scripts; installer and OpenCode V2 contracts; the separate benchmark module **and its driven journeys**; dead code; native Darwin release blockers; and the deterministic cross-lane battery. It requires macOS, Go, Node/npm, Python and jq. The SDK contract test also fetches pinned npm packages. A missing prerequisite or failing check blocks the push.
+
+Output is one PASS line per check. On failure, the last 20 log lines and a path to the complete logs and benchmark results are printed. The hook makes no reviewer-model calls. CI also runs real-agent E2E with installed runtimes on macOS.
+
+### Native macOS E2E Tests
+
+```bash
+./scripts/darwin-release-blockers.sh verify
+./scripts/darwin-release-blockers.sh run
+go test ./e2e/organicruntime -count=1
+```
+
+CI also runs the `real_agent_e2e` build-tag suite after installing the supported agents.
 
 ### Running the Cross-Lane Battery
 
@@ -200,24 +209,6 @@ repository root only when running those opt-in axes; their exact driven commands
 are documented in [`bench/README.md`](bench/README.md).
 
 Benchmark validation applies to review-lifecycle, gate, recovery, delivery, benchmark implementation/corpus/classifier, and benchmark-claim changes. For measured product-behavior changes, use driven mode and report the command, tested binary or commit, selected subset or axes, and result summary. Compare before and after only when claiming a measured friction change. For unrelated changes, mark benchmark validation `N/A` with a brief reason.
-
-### Windows — Known Test Limitations
-
-Some unit tests require OS-level capabilities that are restricted on Windows by default.
-
-#### Symlink tests (`SeCreateSymbolicLinkPrivilege`)
-
-Tests that create symbolic links (e.g. in `internal/components/filemerge`) will be **skipped automatically** on Windows builds where the process lacks `SeCreateSymbolicLinkPrivilege` (`ERROR_PRIVILEGE_NOT_HELD`, errno 1314). This is a Windows security policy, not a bug in the code.
-
-To run these tests without restrictions, choose one of:
-
-- **Enable Developer Mode** — Settings → System → For developers → Developer Mode. This grants symlink creation to all processes without admin rights.
-- **Run as Administrator** — open your terminal as Administrator before running `go test ./...`.
-- **Grant the privilege explicitly** via Group Policy: `Local Security Policy → User Rights Assignment → Create symbolic links`.
-
-> On Linux and macOS these tests always run without any extra setup.
-
----
 
 ## Commit Convention
 
@@ -349,7 +340,7 @@ Review feedback should be warm, direct, and useful quickly. Start with the actio
 - [ ] The PR is at or below 400 changed lines, or a maintainer approved `size:exception`
 - [ ] Commits are organized by deliverable work unit
 - [ ] All unit tests pass (`go test ./...`)
-- [ ] E2E tests pass (`cd e2e && ./docker-test.sh`)
+- [ ] macOS E2E tests pass (`./scripts/darwin-release-blockers.sh run`)
 - [ ] Benchmark validation completed, or this change is not applicable to the benchmark (explain why in the Test Plan).
 - [ ] Commits follow Conventional Commits format
 - [ ] Code is self-reviewed
@@ -375,7 +366,7 @@ All PRs go through automated checks:
 | **Check Issue Has status:approved** | The linked issue has `status:approved` under the canonical issue-creation workflow contract |
 | **Check PR Has type:* Label** | Exactly one `type:*` label is applied |
 | **Unit Tests** | `go test ./...` passes |
-| **E2E Tests** | `cd e2e && ./docker-test.sh` passes |
+| **Darwin Runtime** | Native macOS release-blocker tests pass |
 
 **All checks must pass** before a PR can be merged.
 

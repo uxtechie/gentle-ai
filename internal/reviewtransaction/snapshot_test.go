@@ -1495,6 +1495,8 @@ func TestBaseWorkspaceOverlayBuildsAllUntrackedCandidateFromEmptyIndex(t *testin
 		t.Run(tt.name, func(t *testing.T) {
 			repo := t.TempDir()
 			gitSnapshot(t, repo, "init")
+			gitSnapshot(t, repo, "config", "--local", "core.fsmonitor", "false")
+			gitSnapshot(t, repo, "config", "--local", "core.untrackedCache", "false")
 			gitSnapshot(t, repo, "config", "user.email", "test@example.com")
 			gitSnapshot(t, repo, "config", "user.name", "Test")
 			gitSnapshot(t, repo, "commit", "--allow-empty", "-m", "empty base")
@@ -2110,7 +2112,9 @@ func snapshotRepoTemplate() (string, error) {
 			snapshotRepoTemplateErr = fmt.Errorf("create template directory: %w", err)
 			return
 		}
-		for _, args := range [][]string{{"init"}, {"config", "--local", "maintenance.auto", "false"}, {"config", "user.email", "snapshot@example.com"}, {"config", "user.name", "Snapshot Test"}, {"config", "core.autocrlf", "false"}} {
+		// A user-level fsmonitor daemon creates a Unix socket inside .git.
+		// The template is copied with os.CopyFS, which cannot copy sockets.
+		for _, args := range [][]string{{"init"}, {"config", "--local", "core.fsmonitor", "false"}, {"config", "--local", "core.untrackedCache", "false"}, {"config", "--local", "maintenance.auto", "false"}, {"config", "user.email", "snapshot@example.com"}, {"config", "user.name", "Snapshot Test"}, {"config", "core.autocrlf", "false"}} {
 			if snapshotRepoTemplateErr = runSnapshotGit(template, args...); snapshotRepoTemplateErr != nil {
 				_ = os.RemoveAll(template)
 				return

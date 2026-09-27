@@ -80,47 +80,21 @@ gentle-ai sync
 
 Never publish binary-only upgrade guidance. Managed reviewer and runtime assets are version-bound to the binary, and review lifecycle operations fail closed until sync repairs missing or mismatched writer provenance.
 
-### Windows distribution restoration gate
+### macOS-only distribution
 
-Windows source compatibility, CI, and runtime tests remain supported. Official
-Windows executable/archive assets and Scoop publication are temporarily omitted.
-Because there is no signed Windows asset to download, Windows never downloads an
-unsigned executable and never executes a remote update script. Instead:
-
-- With Go 1.25.10+ on `PATH`, the built-in upgrader runs
-  `go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@vX.Y.Z`,
-  pinned to the exact release tag. This is verified — just against a different
-  trust anchor: the module is checked against the Go checksum database
-  (`sum.golang.org`) rather than our minisign release signature. The upgrader
-  does not disable the checksum database on this path.
-- Without Go on `PATH`, the upgrader fails closed to `go install` guidance and
-  performs no download or execution at all.
-
-Linux and macOS are unaffected by this: they continue to download the signed
-release archive and verify it with minisign, and they never route through
-`go install`.
-
-Restore Windows distribution only after all of these conditions are enforced:
-
-1. Provision publicly trusted RSA Authenticode signing, preferably managed OIDC
-   with Azure Artifact Signing; self-signed or mock credentials are not acceptable.
-2. Sign both amd64 and arm64 executables before archive and checksum generation.
-3. Add pre-publication and remote-release verification that
-   fails if either executable is unsigned or its signature is not publicly trusted.
-4. Restore the Windows GoReleaser targets and Scoop publisher together, with
-   regression coverage proving no unsigned artifact can be emitted.
-
-Until then, `scripts/verify-release-distribution-policy.sh` blocks any Windows or
-Scoop entry in `.goreleaser.yaml`, and the exact remote asset check accepts only
-the four macOS/Linux archives plus the signed checksum manifest.
+The release distributes only macOS `amd64` and `arm64` archives. The release
+policy rejects any added Linux or Windows binary/archive, and the remote asset
+verification accepts only the two macOS archives, provider contract, provenance,
+and signed checksum manifest. The Linux release runner is publication
+infrastructure: supported-platform tests run in macOS CI on the exact commit.
 
 The tag workflow fails unless all of these hold:
 
 - the event is an annotated exact `vMAJOR.MINOR.PATCH` tag;
 - the event SHA, tag target, checkout, remote tag, and current `origin/main` are identical;
 - the worktree and module graph remain immutable (`go mod tidy -diff`);
-- tests, vet, and format checks pass under read-only token permissions;
+- macOS CI passes on the exact source commit and the tag preflight checks format;
 - the protected signing key matches a non-test injected trust anchor;
-- the Windows/Scoop omission policy passes before any publication;
+- the macOS-only distribution policy passes before publication;
 - GoReleaser signs the full `${artifact}` path with the exact trusted comment;
 - the published GitHub asset set is exact, the remote signature is valid, and every remote checksum verifies.

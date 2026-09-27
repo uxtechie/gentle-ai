@@ -25,18 +25,18 @@ A test with those properties gets disabled within a month. The solution is to ke
 
 ---
 
-## Two E2E suites
+## macOS runtime E2E
 
-| Suite | Location | Platforms | What it proves |
+| Suite | Location | Platform | What it proves |
 |---|---|---|---|
-| Installer E2E | `e2e/docker-test.sh` | Ubuntu, Arch, Fedora (Docker) | Installation, layout, idempotency, optional SDD |
-| Organic Runtime E2E | `e2e/organicruntime/` | Ubuntu, Windows (native runners) | A real agent driving the real CLI through the full work lifecycle |
+| Organic Runtime E2E | `e2e/organicruntime/` | macOS (native runner) | A real agent driving the real CLI through the full work lifecycle |
+| Darwin release blockers | `scripts/darwin-release-blockers.sh` | macOS (native runner) | Filesystem and process behavior on the supported OS |
 
-The installer suite is documented separately in [Docker E2E Testing](./docker-e2e-testing.md). This document covers the Organic Runtime suite.
+This document covers the Organic Runtime suite.
 
 ### Test scope by trigger
 
-The installer suite runs all platform checks on every trigger; only depth changes. On `pull_request` it runs with `RUN_FULL_E2E=0` for fast feedback; on `push` and `schedule` it runs the full suite.
+CI runs the macOS runtime suites on pull requests, pushes to main, and the daily schedule.
 
 ---
 
@@ -242,17 +242,17 @@ GENTLE_AI_REAL_AGENT_E2E=1 \
 
 Without `GENTLE_AI_REAL_AGENT_E2E=1` the test skips, so ordinary `go test ./...` runs stay fast. A version mismatch on the `opencode` executable fails rather than silently testing a different runtime.
 
-In CI the `organic-runtime-e2e` job runs this across a matrix of `ubuntu-latest` and `windows-latest`, installing the pinned OpenCode runtime first.
+In CI the `organic-runtime-e2e` job runs on macOS, installing the pinned OpenCode runtime first.
 
 ---
 
 ## What it proves, and what it does not
 
-**Proved.** Given a known agent behaviour, the CLI classifies the implementation route correctly, creates no SDD artifacts when it must not, freezes the candidate, runs applicable verification, records any selected review as content-bound evidence only, performs a real compare-and-swap against the remote under ordinary repository policy, and stops when the kill switch is set — on Linux and Windows. Review evidence never authorizes delivery or archive.
+**Proved.** Given a known agent behaviour, the CLI classifies the implementation route correctly, freezes the candidate, runs applicable verification, records any selected review as content-bound evidence only, performs a real compare-and-swap against the remote under ordinary repository policy, and stops when the kill switch is set — on macOS. Review evidence never authorizes delivery or archive.
 
 **Not proved.** That a live model, given the shipped prompt, produces the same tool calls the fixture scripts. That leap is non-deterministic by nature and does not belong in a merge gate; it is covered by real usage and by the cross-adapter asset parity fixtures.
 
-The complement is the platform unit tests. The Windows job runs a curated set of release-blocker tests — handle rebinding, secure-open fallbacks, store-lock ownership and recovery, concurrent authority repair — because the E2E tells you *that* something broke while a unit test tells you *where*, in seconds instead of fifteen minutes.
+The complementary Darwin release-blocker manifest exercises native macOS filesystem and process behavior.
 
 ---
 
@@ -270,6 +270,5 @@ The approach generalizes to any agent-driven system:
 
 ## References
 
-- [Docker E2E Testing](./docker-e2e-testing.md) — the installer suite
 - [Organic Recovery Architecture and Implementation Plan](./audits/2026-07-23-organic-recovery-implementation-plan.md) — the routes, verification axes, and acceptance criteria this suite exercises
 - [Review Authority Threat Model](./review-authority-threat-model.md) — boundaries and assumptions of the trust kernel

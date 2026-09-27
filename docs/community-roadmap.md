@@ -50,21 +50,6 @@ opening a PR; the decision has to land first or the work gets thrown away.
 Some of the highest-priority items are single-line fixes with a long
 explanation; some low-priority ones touch a lot of surface.
 
-## If you have a Windows machine
-
-[#1983](https://github.com/Gentleman-Programming/gentle-ai/issues/1983) is the
-most valuable thing an outside contributor can do right now, and it is hard for
-the maintainers to do well because it needs a real Windows box.
-
-The Windows test lane never completed a single run until 2026-07-29 — its job
-timeout was shorter than one of its own steps, so every push was cancelled
-partway. Fixing that revealed nineteen genuine failures that had been invisible
-for months. They are grouped by cause in the issue, and **each group is
-independent**: you can fix one and open a PR without touching the others.
-
-Until they are green the lane runs outside `ci.yml`, so it reports without
-gating releases. When they are green it moves back and gates again.
-
 ## If you want something smaller
 
 Sort the query by

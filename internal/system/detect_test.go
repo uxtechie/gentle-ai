@@ -9,8 +9,8 @@ func TestIsSupportedOS(t *testing.T) {
 		want bool
 	}{
 		{name: "darwin is supported", goos: "darwin", want: true},
-		{name: "linux is supported", goos: "linux", want: true},
-		{name: "windows is supported", goos: "windows", want: true},
+		{name: "linux is unsupported", goos: "linux", want: false},
+		{name: "windows is unsupported", goos: "windows", want: false},
 	}
 
 	for _, tc := range tests {
@@ -43,8 +43,8 @@ func TestDetectFromInputsMarksFedoraSupported(t *testing.T) {
 	osRelease := "ID=fedora\nID_LIKE=rhel fedora\n"
 	result := detectFromInputs("linux", "amd64", "/bin/bash", osRelease, toolsOnPath("dnf"), nil)
 
-	if !result.System.Supported {
-		t.Fatalf("expected supported system for fedora linux distro")
+	if result.System.Supported {
+		t.Fatal("Fedora must not be reported as supported")
 	}
 
 	if result.System.Profile.LinuxDistro != LinuxDistroFedora {
@@ -64,8 +64,8 @@ func TestDetectFromInputsMarksFedoraSilverblueSupported(t *testing.T) {
 	osRelease := "NAME=\"Fedora Linux\"\nID=fedora\nVARIANT=\"Silverblue\"\nVARIANT_ID=silverblue\n"
 	result := detectFromInputs("linux", "amd64", "/bin/bash", osRelease, toolsOnPath("rpm-ostree"), nil)
 
-	if !result.System.Supported {
-		t.Fatalf("expected supported system for fedora silverblue")
+	if result.System.Supported {
+		t.Fatal("Fedora Silverblue must not be reported as supported")
 	}
 
 	if result.System.Profile.LinuxDistro != LinuxDistroFedora {
@@ -123,8 +123,8 @@ func TestDetectFromInputsMarksUbuntuSupported(t *testing.T) {
 	osRelease := "ID=ubuntu\nID_LIKE=debian\n"
 	result := detectFromInputs("linux", "amd64", "/bin/bash", osRelease, toolsOnPath("apt"), nil)
 
-	if !result.System.Supported {
-		t.Fatalf("expected ubuntu linux to be supported")
+	if result.System.Supported {
+		t.Fatal("Ubuntu must not be reported as supported")
 	}
 
 	if result.System.Profile.LinuxDistro != LinuxDistroUbuntu {
@@ -140,8 +140,8 @@ func TestDetectFromInputsMarksArchSupported(t *testing.T) {
 	osRelease := "ID=arch\nID_LIKE=archlinux\n"
 	result := detectFromInputs("linux", "amd64", "/bin/bash", osRelease, toolsOnPath("pacman"), nil)
 
-	if !result.System.Supported {
-		t.Fatalf("expected arch linux to be supported")
+	if result.System.Supported {
+		t.Fatal("Arch must not be reported as supported")
 	}
 
 	if result.System.Profile.LinuxDistro != LinuxDistroArch {
@@ -350,8 +350,8 @@ func TestDetectFromInputsWindowsShellDefaultsToPowershell(t *testing.T) {
 func TestDetectFromInputsMarksWindowsSupported(t *testing.T) {
 	result := detectFromInputs("windows", "amd64", "", "", nil, nil)
 
-	if !result.System.Supported {
-		t.Fatalf("expected supported system for windows")
+	if result.System.Supported {
+		t.Fatal("Windows must not be reported as supported")
 	}
 
 	if result.System.OS != "windows" {
@@ -376,8 +376,8 @@ func TestDetectFromInputsProfileIsPopulatedInSystem(t *testing.T) {
 	if result.System.Profile.PackageManager != "apt" {
 		t.Fatalf("Profile.PackageManager = %q, want apt", result.System.Profile.PackageManager)
 	}
-	if !result.System.Profile.Supported {
-		t.Fatalf("Profile.Supported = false, want true")
+	if result.System.Profile.Supported {
+		t.Fatal("Linux profile must not be reported as supported")
 	}
 	// System.Supported should mirror profile
 	if result.System.Supported != result.System.Profile.Supported {

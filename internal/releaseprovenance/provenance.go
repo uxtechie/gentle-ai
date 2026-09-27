@@ -98,7 +98,7 @@ func Build(config []byte, input Input) ([]byte, error) {
 		return nil, errors.New("release provenance input is invalid")
 	}
 	version := input.Tag[1:]
-	platforms := [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}}
+	platforms := [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}}
 	artifacts := make([]any, 0, len(platforms)+1)
 	for _, platform := range platforms {
 		artifacts = append(artifacts, binaryArtifact{

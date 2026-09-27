@@ -1,0 +1,4 @@
+pre-push:
+  commands:
+    local-quality:
+      run: bash scripts/pre-push-quality.sh

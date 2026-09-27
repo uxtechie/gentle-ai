@@ -9,54 +9,10 @@
 - If Homebrew requires trust, run `brew trust --formula gentleman-programming/tap/gentle-ai` once for Gentle AI™ only.
   - To install several tools from this tap, use `brew trust gentleman-programming/tap` instead. It trusts all current and future formulas, casks, and external commands published in the tap.
 
-### Ubuntu/Debian (and derivatives like Linux Mint, Pop!\_OS)
-
-- `apt-get` available (standard on these distros).
-- `sudo` access for package installs.
-- `git` available.
-- If Node.js is missing, `gentle-ai install` prints this install hint: NodeSource LTS setup + `apt-get install -y nodejs` (npm comes bundled).
-- If using Homebrew on Linux, Bubblewrap may require unprivileged user namespaces; see `docs/usage.md#homebrew-upgrade-troubleshooting`.
-
-### Arch Linux (and derivatives like Manjaro, EndeavourOS)
-
-- `pacman` available (standard on these distros).
-- `sudo` access for package installs.
-- `git` available.
-- If Node.js is missing, `gentle-ai install` prints this install hint: `pacman -S --noconfirm nodejs npm`.
-
-### Fedora / RHEL family (Fedora, CentOS Stream, Rocky Linux, AlmaLinux)
-
-- `dnf` available (standard on these distros).
-- `sudo` access for package installs.
-- `git` available.
-- If Node.js is missing, `gentle-ai install` prints this install hint: NodeSource LTS setup + `dnf install -y nodejs` (npm comes bundled).
-
-### All platforms
-
 - Git 2.38+.
 - Go 1.25.10+ (for building from source).
-- Node.js 18+ and npm: `gentle-ai install` checks these as required prerequisites on every platform and prints a warning with a distro-specific install hint (see above) if either is missing — regardless of which agents/components you select. It does not install them for you, and it does not install agent runtimes either: if a selected agent isn't detected, `gentle-ai install` refuses and prints the exact `npm install -g` (or equivalent) command for you to run yourself. Node.js/npm are strictly required if you select the CodeGraph community tool, which gentle-ai does install via `npm install -g`.
+- Node.js 18+ and npm. Gentle AI checks these prerequisites and does not install agent runtimes for you.
 - Pi installed and available as `pi` on `PATH` if you select the Pi agent.
-
-### Windows
-
-- Go 1.25.10+, because Windows installs and upgrades through `go install`.
-  Official Windows binaries and the Scoop bucket are temporarily unavailable
-  while publicly trusted Authenticode signing is provisioned, so nothing
-  unsigned is ever fetched. With Go on `PATH`, `gentle-ai upgrade` updates
-  itself automatically by running `go install …/cmd/gentle-ai@vX.Y.Z` pinned to
-  the release tag and verified against the Go checksum database; without Go it
-  fails closed and just prints that command. See [platforms.md](platforms.md)
-  and the
-  [restoration gate](release-signing.md#windows-distribution-restoration-gate).
-
-```powershell
-# Stable channel (`@latest`, currently v2.6.0)
-go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@latest
-```
-
-This command uses the `/v2` module path. Go requires that suffix for major
-version 2 and above.
 
 ## Version Policy
 
@@ -76,38 +32,25 @@ gentle-ai version
 Only use `main` when testing changes that are not part of a release yet:
 
 ```bash
-# macOS / Linux
 go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main
-gentle-ai version
-
-# Windows (PowerShell)
-$env:GENTLE_AI_CHANNEL="beta"; go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main
 gentle-ai version
 ```
 
 To update a beta installation later, preserve the beta channel:
 
 ```bash
-# macOS / Linux
 GENTLE_AI_CHANNEL=beta gentle-ai upgrade
-
-# Windows (PowerShell)
-$env:GENTLE_AI_CHANNEL="beta"; gentle-ai upgrade
 ```
 
-`gentle-ai upgrade` advances the `gentle-ai` binary from `main` and refreshes managed tools on macOS, Linux, and Windows with Go on `PATH`.
+`gentle-ai upgrade` advances the `gentle-ai` binary from `main` and refreshes managed tools on macOS with Go on `PATH`.
 
-If you re-run an installer, pass beta explicitly because both installers default to stable:
+If you re-run the installer, pass beta explicitly because it defaults to stable:
 
 ```bash
-# macOS / Linux
 curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash -s -- --channel beta
-
-# Windows (PowerShell)
-$env:GENTLE_AI_CHANNEL="beta"; irm https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.ps1 | iex
 ```
 
-> **Go module proxy cache**: `proxy.golang.org` can lag behind new commits on `main` for up to several hours. If manual `go install ...@main` does not update to the newest commit, bypass the cache with `GOPROXY=direct go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main` (PowerShell: `$env:GOPROXY="direct"; go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main`).
+> **Go module proxy cache**: `proxy.golang.org` can lag behind new commits on `main`. If manual `go install ...@main` is stale, use `GOPROXY=direct go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main`.
 
 The managed install scripts select the latest version for their chosen channel and do not accept arbitrary release pins. Use `go install` with an exact tag when you need a reproducible prerelease or stable version.
 
@@ -125,7 +68,7 @@ Use `--dry-run` first to validate selections and execution plan without applying
 go run ./cmd/gentle-ai install
 ```
 
-The installer detects your platform automatically — no flags needed to select macOS vs Linux. Install commands are resolved through the appropriate package manager (brew, apt, pacman, or dnf) based on detection.
+The installer requires macOS and resolves system packages through Homebrew.
 
 After completion, verify that agent configs and selected components were installed to their expected paths.
 
@@ -172,7 +115,6 @@ Optional wrapper tools for extra defense:
 
 ## Unsupported platforms
 
-If you run the installer on an unsupported OS or Linux distro, it exits immediately with an error:
+On Linux or Windows, the installer exits immediately with an error:
 
-- `unsupported operating system: only macOS, Linux, and Windows are supported (detected <os>)`
-- `unsupported linux distro: Linux support is limited to Ubuntu/Debian, Arch, and Fedora/RHEL family (detected <distro>)`
+- `Unsupported OS: <os>. Only macOS is supported.`

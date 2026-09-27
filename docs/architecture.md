@@ -36,7 +36,7 @@ internal/
   tui/                     Bubbletea TUI (Rose Pine theme)
     styles/  screens/
 scripts/                   Installer, release, and maintainer scripts (install.sh, release preflights, cross-lane battery)
-e2e/                       Docker-based E2E tests (Ubuntu + Arch)
+ e2e/                       Native macOS runtime integration tests
 testdata/                  Golden test fixtures
 ```
 
@@ -48,20 +48,17 @@ testdata/                  Golden test fixtures
 # Unit tests
 go test ./...
 
-# Docker E2E (Ubuntu + Arch, requires Docker)
-RUN_FULL_E2E=1 RUN_BACKUP_TESTS=1 ./e2e/docker-test.sh
+# Native macOS release blockers
+./scripts/darwin-release-blockers.sh run
 
-# Dry-run smoke test (macOS/Linux)
+# Dry-run smoke test (macOS)
 gentle-ai install --dry-run --agent claude-code --preset minimal
-
-# Dry-run smoke test (Windows PowerShell)
-gentle-ai.exe install --dry-run --agent claude-code --preset minimal
 ```
 
 Test coverage is broad and changes frequently. Keep this section qualitative unless counts are generated automatically:
 
 - Unit tests cover agent adapters, components, system detection, app dispatch, update/upgrade behavior, and TUI flows.
-- Docker E2E tests exercise Ubuntu and Arch paths when `RUN_FULL_E2E=1` is enabled.
+- Native E2E tests exercise review and agent integration on macOS.
 - Golden fixtures snapshot generated component output under `testdata/`.
 - Full pipeline paths are tested: detection, planning, execution, backup, restore, and verification.
 - Agent adapter tests include cross-platform path validation.

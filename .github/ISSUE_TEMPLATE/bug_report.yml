@@ -82,12 +82,6 @@ body:
       label: Operating System
       options:
         - macOS
-        - Linux (Ubuntu/Debian)
-        - Linux (Arch/Manjaro)
-        - Linux (Fedora/RHEL)
-        - Linux (Other)
-        - Windows
-        - Windows (WSL)
     validations:
       required: true
 

@@ -70,9 +70,11 @@ go test ./...
 go run ./internal/gofmtcheck
 ```
 
-**E2E Tests** (Docker required)
+**macOS Runtime E2E**
 ```bash
-cd e2e && ./docker-test.sh
+./scripts/darwin-release-blockers.sh verify
+./scripts/darwin-release-blockers.sh run
+go test ./e2e/organicruntime -count=1
 ```
 
 **Benchmark Validation**
@@ -81,7 +83,7 @@ See the [benchmark guide](../bench/README.md). Benchmark validation applies to r
 
 - [ ] Unit tests pass (`go test ./...`)
 - [ ] Go format passes (`go run ./internal/gofmtcheck`)
-- [ ] E2E tests pass (`cd e2e && ./docker-test.sh`)
+- [ ] macOS runtime E2E tests pass (`./scripts/darwin-release-blockers.sh run`)
 - [ ] Manually tested locally
 
 <!-- Describe any additional manual testing steps if needed. -->
@@ -100,7 +102,7 @@ The following checks run automatically on this PR:
 | Check PR Has `type:*` Label | ⏳ | Exactly one `type:*` label must be applied |
 | Unit Tests | ⏳ | `go test ./...` must pass |
 | Go Format | ⏳ | `go run ./internal/gofmtcheck` must pass |
-| E2E Tests | ⏳ | `cd e2e && ./docker-test.sh` must pass |
+| Darwin Runtime | ⏳ | Native macOS release-blocker tests must pass |
 
 ---
 
@@ -111,7 +113,7 @@ The following checks run automatically on this PR:
 - [ ] I have added the appropriate `type:*` label to this PR
 - [ ] Unit tests pass (`go test ./...`)
 - [ ] Go format passes (`go run ./internal/gofmtcheck`)
-- [ ] E2E tests pass (`cd e2e && ./docker-test.sh`)
+- [ ] macOS runtime E2E tests pass (`./scripts/darwin-release-blockers.sh run`)
 - [ ] Benchmark validation completed, or this change is not applicable to the benchmark (explain why in the Test Plan).
 - [ ] I have updated documentation if necessary
 - [ ] My commits follow [Conventional Commits](https://www.conventionalcommits.org/) format

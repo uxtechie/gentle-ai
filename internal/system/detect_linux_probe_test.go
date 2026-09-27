@@ -1,6 +1,7 @@
 package system
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -114,10 +115,8 @@ func toolsOnPath(names ...string) map[string]ToolStatus {
 	return tools
 }
 
-// TestLinuxIsSupportedWheneverAPackageManagerIsOnPath is the whole point: what
-// makes a Linux machine usable is a package manager that answers, not
-// membership in a list somebody has to keep editing.
-func TestLinuxIsSupportedWheneverAPackageManagerIsOnPath(t *testing.T) {
+// Legacy Linux profile detection cannot override the macOS-only product guard.
+func TestLinuxProfileCannotOverrideSupportedOS(t *testing.T) {
 	tests := []struct {
 		name         string
 		osRelease    string
@@ -168,8 +167,8 @@ func TestLinuxIsSupportedWheneverAPackageManagerIsOnPath(t *testing.T) {
 			if profile.PackageManager != tc.wantPM {
 				t.Fatalf("PackageManager = %q, want %q", profile.PackageManager, tc.wantPM)
 			}
-			if err := EnsureSupportedPlatform(profile); err != nil {
-				t.Fatalf("EnsureSupportedPlatform() = %v, want nil", err)
+			if err := EnsureSupportedPlatform(profile); !errors.Is(err, ErrUnsupportedOS) {
+				t.Fatalf("EnsureSupportedPlatform() = %v, want ErrUnsupportedOS", err)
 			}
 		})
 	}
@@ -208,11 +207,7 @@ func TestLinuxDistroReportsTheOSReleaseIDVerbatim(t *testing.T) {
 	}
 }
 
-// TestLinuxRefusalNamesTheProbedManagersAndARunnableCheck is the dead-end
-// guard. A machine with no package manager at all is still a refusal, but it
-// must be a refusal the reader can act on without editing /etc/os-release to
-// lie about the distribution (which is what #334's reporter had to do).
-func TestLinuxRefusalNamesTheProbedManagersAndARunnableCheck(t *testing.T) {
+func TestLinuxRefusalNamesTheSupportedOS(t *testing.T) {
 	profile := resolvePlatformProfile("linux", osReleaseGentoo, nil)
 	if profile.Supported {
 		t.Fatal("Supported = true with no package manager on PATH, want false")
@@ -224,27 +219,7 @@ func TestLinuxRefusalNamesTheProbedManagersAndARunnableCheck(t *testing.T) {
 	}
 	message := err.Error()
 
-	// Every manager the probe looks for must be named, so the reader knows
-	// exactly which one to install.
-	for _, manager := range []string{"brew", "apt", "dnf", "rpm-ostree", "pacman", "apk", "zypper", "nix", "emerge"} {
-		if !strings.Contains(message, manager) {
-			t.Errorf("refusal does not name probed package manager %q:\n%s", manager, message)
-		}
-	}
-
-	// The exit has to be runnable, not a description of a policy.
-	if !strings.Contains(message, `for m in brew apt dnf rpm-ostree pacman apk zypper nix emerge; do command -v "$m"; done`) {
-		t.Errorf("refusal does not print the runnable probe check:\n%s", message)
-	}
-	if !strings.Contains(message, "PATH") {
-		t.Errorf("refusal does not say that PATH is what it searched:\n%s", message)
-	}
-	if !strings.Contains(message, "gentoo") {
-		t.Errorf("refusal does not report the detected distro:\n%s", message)
-	}
-
-	// The old message named a closed list and no exit at all. It must be gone.
-	if strings.Contains(message, "Linux support is limited to") {
-		t.Errorf("refusal still names a closed distro list:\n%s", message)
+	if !errors.Is(err, ErrUnsupportedOS) || !strings.Contains(message, "only macOS is supported") {
+		t.Errorf("unexpected Linux refusal: %s", message)
 	}
 }

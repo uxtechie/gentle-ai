@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Local cross-lane integration battery. NOT wired into CI on purpose:
-# the optional --with-model lane spends real reviewer model runs on the
-# development subscription, and every lane drives a real gentle-ai binary
-# end to end against live scratch repositories.
+# Cross-lane integration battery. CI runs the deterministic lanes only;
+# optional --with-host lanes spend real model runs on the development
+# subscription. Every lane drives a real gentle-ai binary against scratch
+# repositories.
 #
 # Usage:
 #   scripts/cross-lane-battery.sh --binary /path/to/gentle-ai [--with-model] [--with-host] [--keep-work]

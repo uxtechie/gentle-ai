@@ -100,9 +100,7 @@ The `model` value is injected during sync from Kiro model assignments (`auto|opu
 
 ---
 
-## Config Paths by Platform
-
-### macOS
+## macOS Config Paths
 
 | Artifact | Path |
 |----------|------|
@@ -112,41 +110,18 @@ The `model` value is injected during sync from Kiro model assignments (`auto|opu
 | Settings path | `~/Library/Application Support/Kiro/User/settings.json` |
 | MCP config | `~/.kiro/settings/mcp.json` |
 
-### Windows
-
-| Artifact | Path |
-|----------|------|
-| Global config dir | `%APPDATA%\kiro\User` |
-| Steering file | `%USERPROFILE%\.kiro\steering\gentle-ai.md` |
-| Skills dir | `%USERPROFILE%\.kiro\skills\` |
-| Settings path | `%APPDATA%\kiro\User\settings.json` |
-| MCP config | `%USERPROFILE%\.kiro\settings\mcp.json` |
-
-### Linux (XDG)
-
-| Artifact | Path |
-|----------|------|
-| Global config dir | `$XDG_CONFIG_HOME/kiro/user` *(fallback: `~/.config/kiro/user`)* |
-| Steering file | `~/.kiro/steering/gentle-ai.md` |
-| Skills dir | `~/.kiro/skills/` |
-| Settings path | `$XDG_CONFIG_HOME/kiro/user/settings.json` |
-| MCP config | `~/.kiro/settings/mcp.json` |
-
 ---
 
 ## ⚠️ Split-Root Layout
 
 Kiro uses a **split-root layout** — gentle-ai managed files and IDE settings live in different directories:
 
-- **Steering, skills, and native agents** → `~/.kiro/` (or `%USERPROFILE%\.kiro\` on Windows)
+- **Steering, skills, and native agents** → `~/.kiro/`
   - `~/.kiro/steering/gentle-ai.md` — orchestrator persona
   - `~/.kiro/skills/` — SDD skill files
   - `~/.kiro/agents/` — SDD phase subagents
-- **IDE settings** → platform-native Kiro User dir (`settings.json` only)
-  - macOS: `~/Library/Application Support/Kiro/User/settings.json`
-  - Windows: `%APPDATA%\kiro\User\settings.json`
-  - Linux: `$XDG_CONFIG_HOME/kiro/user/settings.json`
-- **MCP config** → always `~/.kiro/settings/mcp.json` (or `%USERPROFILE%\.kiro\settings\mcp.json` on Windows)
+- **IDE settings** → `~/Library/Application Support/Kiro/User/settings.json`
+- **MCP config** → `~/.kiro/settings/mcp.json`
 
 If MCP tools are not loading, check `~/.kiro/settings/mcp.json`.  
 If Kiro app settings are not applying, check the platform-native User dir (`settings.json`).  

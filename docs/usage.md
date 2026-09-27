@@ -397,8 +397,7 @@ gentle-ai install --agent windsurf --preset full-gentleman
 
 ### Homebrew upgrade troubleshooting
 
-Homebrew 6 can require explicit trust for non-official taps and, on Linux, can
-sandbox builds with Bubblewrap. `gentle-ai upgrade` and `scripts/install.sh`
+Homebrew 6 can require explicit trust for non-official taps. `gentle-ai upgrade` and `scripts/install.sh`
 auto-trust only the Gentle AI formula. For the broader tap-wide trust option,
 see the [update and upgrade guidance](#update--upgrade). Manual upgrades may
 still need this one-time command:
@@ -408,28 +407,11 @@ brew trust --formula gentleman-programming/tap/gentle-ai
 brew upgrade gentle-ai
 ```
 
-On Linux, if Homebrew reports that Bubblewrap cannot create a rootless sandbox,
-there is nothing for Gentle AI to install: Bubblewrap is already present, but the
-host blocks the rootless namespace primitives it needs. This is a security
-tradeoff and should be an explicit admin decision. If your policy allows it,
-fix the host namespace policy first:
-
-```bash
-sudo sysctl -w kernel.unprivileged_userns_clone=1
-sudo sysctl -w user.max_user_namespaces=28633
-sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
-```
-
-Use `HOMEBREW_NO_SANDBOX_LINUX=1 brew upgrade gentle-ai` only as a final
-workaround when your distro policy forbids the namespace settings; it disables
-Homebrew's Linux sandbox for that command.
-
-
 ---
 
 ## Dependency Management
 
-`gentle-ai` auto-detects prerequisites before installation and provides platform-specific guidance:
+`gentle-ai` checks prerequisites before installation on macOS and provides actionable guidance:
 
 - **Detected tools**: git, curl, node, npm, brew, go
 - **Version checks**: validates minimum versions where applicable

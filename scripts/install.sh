@@ -69,17 +69,6 @@ print_homebrew_failure_help() {
         echo "  brew upgrade ${BINARY_NAME}" >&2
     fi
 
-    if [[ "$lower" == *"bubblewrap is installed but cannot create a rootless sandbox"* || "$lower" == *"rootless sandbox"* || "$lower" == *"homebrew_no_sandbox_linux"* ]]; then
-        warn "Homebrew on Linux could not create its Bubblewrap rootless sandbox."
-        echo "This requires an explicit admin/security decision: enabling unprivileged user namespaces lets Homebrew use its sandbox but changes host kernel/AppArmor policy." >&2
-        echo "If acceptable, run:" >&2
-        echo "  sudo sysctl -w kernel.unprivileged_userns_clone=1" >&2
-        echo "  sudo sysctl -w user.max_user_namespaces=28633" >&2
-        echo "  sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true" >&2
-        echo >&2
-        echo "Final workaround if your distro policy forbids this sandbox:" >&2
-        echo "  HOMEBREW_NO_SANDBOX_LINUX=1 brew upgrade ${BINARY_NAME}" >&2
-    fi
 }
 
 # ============================================================================
@@ -126,8 +115,7 @@ detect_platform() {
 
     case "$uname_os" in
         Darwin) OS="darwin"; OS_LABEL="macOS"; GORELEASER_OS="darwin" ;;
-        Linux)  OS="linux";  OS_LABEL="Linux"; GORELEASER_OS="linux" ;;
-        *)      fatal "Unsupported OS: $uname_os. Only macOS and Linux are supported." ;;
+        *)      fatal "Unsupported OS: $uname_os. Only macOS is supported." ;;
     esac
 
     case "$uname_arch" in
@@ -145,11 +133,10 @@ detect_platform() {
 # From .goreleaser.yaml:
 #   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 #
-# GoReleaser v2 {{ .Os }} produces GOOS values (lowercase: darwin, linux)
+# GoReleaser v2 {{ .Os }} produces the GOOS value (darwin)
 # GoReleaser {{ .Arch }} produces GOARCH values (amd64, arm64)
 # Examples:
 #   gentle-ai_1.0.0_darwin_arm64.tar.gz
-#   gentle-ai_1.0.0_linux_amd64.tar.gz
 # ============================================================================
 
 get_archive_name() {

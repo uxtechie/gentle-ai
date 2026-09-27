@@ -14,17 +14,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestOfficialReleaseOmitsUnsignedWindowsDistribution(t *testing.T) {
+func TestOfficialReleaseTargetsOnlyMacOS(t *testing.T) {
 	config := readRepositoryFile(t, ".goreleaser.yaml")
 	for _, forbidden := range []*regexp.Regexp{
 		regexp.MustCompile(`(?mi)^\s*-\s*windows\s*$`),
+		regexp.MustCompile(`(?mi)^\s*-\s*linux\s*$`),
 		regexp.MustCompile(`(?mi)^\s*scoops\s*:`),
 	} {
 		if forbidden.MatchString(config) {
 			t.Errorf("GoReleaser config still enables forbidden Windows distribution: %s", forbidden)
 		}
 	}
-	for _, required := range []string{"- linux", "- darwin", "brews:", "artifacts: checksum"} {
+	for _, required := range []string{"- darwin", "brews:", "artifacts: checksum"} {
 		if !strings.Contains(config, required) {
 			t.Errorf("GoReleaser config lost non-Windows release behavior %q", required)
 		}
@@ -35,9 +36,9 @@ func TestOfficialReleaseOmitsUnsignedWindowsDistribution(t *testing.T) {
 		t.Fatal("release workflow contains mock signing")
 	}
 	ci := readRepositoryFile(t, ".github", "workflows", "ci.yml")
-	for _, required := range []string{"windows-runtime:", "runs-on: windows-latest", "go build -trimpath", "go test ./..."} {
+	for _, required := range []string{"darwin-runtime:", "runs-on: macos-latest", "go build -trimpath", "go test ./..."} {
 		if !strings.Contains(ci, required) {
-			t.Errorf("Windows source-compatibility CI is missing %q", required)
+			t.Errorf("macOS CI is missing %q", required)
 		}
 	}
 
@@ -45,7 +46,7 @@ func TestOfficialReleaseOmitsUnsignedWindowsDistribution(t *testing.T) {
 	if strings.Contains(strings.ToLower(verify), "_windows_") {
 		t.Fatal("remote release verifier still expects Windows assets")
 	}
-	for _, required := range []string{"_linux_amd64.tar.gz", "_linux_arm64.tar.gz", "_darwin_amd64.tar.gz", "_darwin_arm64.tar.gz"} {
+	for _, required := range []string{"_darwin_amd64.tar.gz", "_darwin_arm64.tar.gz"} {
 		if !strings.Contains(verify, required) {
 			t.Errorf("remote release verifier lost %q", required)
 		}
@@ -57,24 +58,13 @@ func TestOfficialReleaseOmitsUnsignedWindowsDistribution(t *testing.T) {
 	}
 }
 
-func TestWindowsInstallAndUpgradeContainNoRemoteBinaryOrScriptPath(t *testing.T) {
+func TestWindowsInstallerRefusesRetiredPlatform(t *testing.T) {
 	installer := readRepositoryFile(t, "scripts", "install.ps1")
-	strategy := readRepositoryFile(t, "internal", "update", "upgrade", "strategy.go")
-	instructions := readRepositoryFile(t, "internal", "update", "instructions.go")
-	for name, content := range map[string]string{"scripts/install.ps1": installer, "strategy.go": strategy, "instructions.go": instructions} {
-		for _, forbidden := range []string{"Install-ViaBinary", "_windows_", "scripts/install.ps1", "ExecutionPolicy", "checksumsUrl"} {
-			if strings.Contains(content, forbidden) {
-				t.Errorf("%s retains forbidden Windows distribution path %q", name, forbidden)
-			}
-		}
+	if !strings.Contains(installer, "macOS only") || !strings.Contains(installer, "exit 1") {
+		t.Fatal("legacy Windows installer must refuse installation")
 	}
-	for _, required := range []string{
-		"Windows binary distribution and Scoop are temporarily unavailable",
-		"go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@latest",
-	} {
-		if !strings.Contains(installer, required) {
-			t.Errorf("Windows installer is missing safe source guidance %q", required)
-		}
+	if strings.Contains(installer, "go install") {
+		t.Fatal("legacy Windows installer still offers source installation")
 	}
 }
 
@@ -91,7 +81,7 @@ func TestReleaseDistributionPolicyAssertionFailsClosed(t *testing.T) {
 		{
 			name: "omitted goos uses unsafe GoReleaser defaults",
 			mutate: func(t *testing.T, root string) {
-				replaceReleasePolicyFile(t, root, ".goreleaser.yaml", "    goos:\n      - linux\n      - darwin\n", "")
+				replaceReleasePolicyFile(t, root, ".goreleaser.yaml", "    goos:\n      - darwin\n", "")
 			},
 		},
 		{
@@ -191,7 +181,7 @@ func TestReleaseDistributionPolicyAssertionFailsClosed(t *testing.T) {
 			name: "artifact path escapes snapshot directory",
 			mutate: func(t *testing.T, root string) {
 				replaceReleasePolicyFile(t, root, filepath.Join("dist", "artifacts.json"),
-					`"path":"dist/gentle-ai_linux_amd64_v1/gentle-ai"`,
+					`"path":"dist/gentle-ai_darwin_amd64_v1/gentle-ai"`,
 					`"path":"dist/../outside/gentle-ai"`)
 				outside := filepath.Join(root, "outside", "gentle-ai")
 				if err := os.MkdirAll(filepath.Dir(outside), 0o755); err != nil {
@@ -205,7 +195,7 @@ func TestReleaseDistributionPolicyAssertionFailsClosed(t *testing.T) {
 		{
 			name: "artifact path resolves through symlink",
 			mutate: func(t *testing.T, root string) {
-				output := filepath.Join(root, "dist", "gentle-ai_linux_amd64_v1", "gentle-ai")
+				output := filepath.Join(root, "dist", "gentle-ai_darwin_amd64_v1", "gentle-ai")
 				if err := os.Remove(output); err != nil {
 					t.Fatal(err)
 				}
@@ -510,12 +500,8 @@ func replaceReleasePolicyFile(t *testing.T, root, path, old, replacement string)
 
 const releasePolicyArtifactsFixture = `[
   {"name":"metadata.json","path":"dist/metadata.json","type":"Metadata"},
-  {"name":"gentle-ai","path":"dist/gentle-ai_linux_amd64_v1/gentle-ai","goos":"linux","goarch":"amd64","target":"linux_amd64_v1","type":"Binary","extra":{"Binary":"gentle-ai","ID":"gentle-ai"}},
-  {"name":"gentle-ai","path":"dist/gentle-ai_linux_arm64_v8.0/gentle-ai","goos":"linux","goarch":"arm64","target":"linux_arm64_v8.0","type":"Binary","extra":{"Binary":"gentle-ai","ID":"gentle-ai"}},
   {"name":"gentle-ai","path":"dist/gentle-ai_darwin_amd64_v1/gentle-ai","goos":"darwin","goarch":"amd64","target":"darwin_amd64_v1","type":"Binary","extra":{"Binary":"gentle-ai","ID":"gentle-ai"}},
   {"name":"gentle-ai","path":"dist/gentle-ai_darwin_arm64_v8.0/gentle-ai","goos":"darwin","goarch":"arm64","target":"darwin_arm64_v8.0","type":"Binary","extra":{"Binary":"gentle-ai","ID":"gentle-ai"}},
-  {"name":"gentle-ai_0.0.0-SNAPSHOT_linux_amd64.tar.gz","path":"dist/gentle-ai_0.0.0-SNAPSHOT_linux_amd64.tar.gz","goos":"linux","goarch":"amd64","target":"linux_amd64_v1","type":"Archive","extra":{"Binaries":["gentle-ai"],"Format":"tar.gz","ID":"default"}},
-  {"name":"gentle-ai_0.0.0-SNAPSHOT_linux_arm64.tar.gz","path":"dist/gentle-ai_0.0.0-SNAPSHOT_linux_arm64.tar.gz","goos":"linux","goarch":"arm64","target":"linux_arm64_v8.0","type":"Archive","extra":{"Binaries":["gentle-ai"],"Format":"tar.gz","ID":"default"}},
   {"name":"gentle-ai_0.0.0-SNAPSHOT_darwin_amd64.tar.gz","path":"dist/gentle-ai_0.0.0-SNAPSHOT_darwin_amd64.tar.gz","goos":"darwin","goarch":"amd64","target":"darwin_amd64_v1","type":"Archive","extra":{"Binaries":["gentle-ai"],"Format":"tar.gz","ID":"default"}},
   {"name":"gentle-ai_0.0.0-SNAPSHOT_darwin_arm64.tar.gz","path":"dist/gentle-ai_0.0.0-SNAPSHOT_darwin_arm64.tar.gz","goos":"darwin","goarch":"arm64","target":"darwin_arm64_v8.0","type":"Archive","extra":{"Binaries":["gentle-ai"],"Format":"tar.gz","ID":"default"}},
   {"name":"gentle-ai-review-provider-contract-1.2.0.tar.gz","path":"dist/gentle-ai-review-provider-contract-1.2.0.tar.gz","type":"Archive","extra":{"Binaries":[],"Format":"tar.gz","ID":"review-provider-contract"}},
@@ -526,17 +512,14 @@ const releasePolicyArtifactsFixture = `[
 
 const releasePolicyRunID = "release-policy-test-run"
 
-func TestWindowsDistributionRestorationGateIsDocumented(t *testing.T) {
-	docs := readRepositoryFile(t, "README.md") + readRepositoryFile(t, "docs", "release-signing.md")
-	for _, required := range []string{
-		"publicly trusted RSA Authenticode",
-		"Azure Artifact Signing",
-		"amd64 and arm64",
-		"before archive and checksum generation",
-		"fails if either executable is unsigned",
-	} {
-		if !strings.Contains(docs, required) {
-			t.Errorf("Windows distribution restoration gate is missing %q", required)
+func TestMacOSDistributionIsTheOnlyReleaseTarget(t *testing.T) {
+	config := readRepositoryFile(t, ".goreleaser.yaml")
+	if !strings.Contains(config, "    goos:\n      - darwin\n") {
+		t.Fatal("GoReleaser must build only Darwin targets")
+	}
+	for _, forbidden := range []string{"      - linux\n", "      - windows\n"} {
+		if strings.Contains(config, forbidden) {
+			t.Fatalf("GoReleaser still distributes an unsupported OS: %q", forbidden)
 		}
 	}
 }

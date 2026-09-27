@@ -1,6 +1,8 @@
 # Ignore Git metadata
 .git
 .gitignore
+.codegraph
+node_modules
 
 # Ignore editor/IDE artifacts
 .idea

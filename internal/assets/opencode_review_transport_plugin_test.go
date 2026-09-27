@@ -260,6 +260,27 @@ printf '%s\n' "$complete" >> "$GENTLE_AI_RELAY_LOG"
 printf '%s\n' '{"schema":"gentle-ai.provider-transport/v1","operation":"result","output":"captured"}'
 `
 
+func TestOpenCodeReviewTransportPluginAcceptsBuildMetadataVersion(t *testing.T) {
+	source, err := Read("opencode/plugins/opencode-review-transport.ts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const harness = `import plugin from "./plugin.mts"
+const hooks = await plugin({ directory: process.cwd(), worktree: process.cwd() })
+const before = { args: { subagent_type: "review-risk", prompt: "provider-owned task" } }
+await hooks["tool.execute.before"]({ tool: "task", sessionID: "session", callID: "call" }, before)
+const after = { output: "provider result", metadata: {} }
+await hooks["tool.execute.after"]({ tool: "task", sessionID: "session", callID: "call", args: { subagent_type: "review-risk" } }, after)
+console.log(JSON.stringify({ prompt: before.args.prompt, output: after.output }))
+`
+	relay := strings.Replace(posixRelayFixture, "gentle-ai 2.4.0", "gentle-ai 3.0.0-20260926221919-a9e36e9b8a4d+dirty", 1)
+	output, frames, probe := runOpenCodeTransportPluginHarness(t, map[string]string{"plugin.mts": string(source)}, harness, relay)
+	if !strings.Contains(output, `"prompt":"Go-materialized immutable prompt"`) || !strings.Contains(output, `"output":"captured"`) ||
+		!strings.Contains(frames, `"operation":"complete"`) || probe == "" {
+		t.Fatalf("dirty version handshake and relay failed: output=%q frames=%q probe=%q", output, frames, probe)
+	}
+}
+
 // posixOldRelayFixture pretends to be a pre-v1 `gentle-ai`: older semver on
 // `--version`, no relay frames, so a path-skew refusal short-circuits.
 const posixOldRelayFixture = `#!/bin/sh

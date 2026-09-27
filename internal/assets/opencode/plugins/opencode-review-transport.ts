@@ -111,11 +111,12 @@ function relayRefusedOutput(reason: string): string {
   return `${RELAY_REFUSED_CODE}: ${reason}`
 }
 
-// Parse `gentle-ai <semver>\n` from `--version` stdout. Anything else is
+// Parse `gentle-ai <semver>\n` from `--version` stdout. Build metadata (such
+// as +dirty) is valid but does not affect the version comparison. Anything else is
 // treated as a probe failure so a binary that does not implement the
 // version command cannot be mistaken for a healthy handshake.
 function parseGentleAiVersion(stdout: string): string | undefined {
-  const match = /^gentle-ai\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\s*$/m.exec(stdout)
+  const match = /^gentle-ai\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)(?:\+[0-9A-Za-z.-]+)?\s*$/m.exec(stdout)
   return match?.[1]
 }
 

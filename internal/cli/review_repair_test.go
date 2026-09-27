@@ -1028,19 +1028,17 @@ func cloneReviewJSONDocument(t *testing.T, document map[string]any) map[string]a
 	return clone
 }
 
-func TestWindowsRuntimeIncludesRepairAndMaintenanceLockRegressions(t *testing.T) {
+func TestCITargetsMacOSOnly(t *testing.T) {
 	payload, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "ci.yml"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{
-		"TestAuthorityLockCancellationPreservesSentinelAndCallerDeadline",
-		"TestCompactStatusLoadContextCancelsUnderExclusiveMaintenance",
-		"TestRepairClassifiedAuthorityConcurrentExecutionCommitsAndReplays",
-		"TestRepairClassifiedAuthorityResumesEachDurablePhase",
-	} {
-		if !bytes.Contains(payload, []byte(name)) {
-			t.Fatalf("Windows PR runtime allowlist is missing %s", name)
+	if !bytes.Contains(payload, []byte("darwin-runtime:")) || !bytes.Contains(payload, []byte("runs-on: macos-latest")) {
+		t.Fatal("CI is missing macOS runtime coverage")
+	}
+	for _, unsupported := range [][]byte{[]byte("runs-on: windows-latest"), []byte("runs-on: ubuntu-latest"), []byte("e2e-tests:")} {
+		if bytes.Contains(payload, unsupported) {
+			t.Fatalf("CI still runs an unsupported platform: %s", unsupported)
 		}
 	}
 }

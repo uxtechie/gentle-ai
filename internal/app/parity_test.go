@@ -70,9 +70,9 @@ func TestInstallPlannerParityWithTUISelection(t *testing.T) {
 
 // --- Batch D: App guard-flow tests ---
 
-func TestGuardAcceptsWindows(t *testing.T) {
-	if err := system.EnsureSupportedOS("windows"); err != nil {
-		t.Fatalf("expected windows to be accepted, got %v", err)
+func TestGuardRejectsWindows(t *testing.T) {
+	if err := system.EnsureSupportedOS("windows"); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("expected windows to be rejected, got %v", err)
 	}
 }
 
@@ -92,41 +92,41 @@ func TestGuardAcceptsDarwin(t *testing.T) {
 	}
 }
 
-func TestGuardAcceptsLinux(t *testing.T) {
-	if err := system.EnsureSupportedOS("linux"); err != nil {
-		t.Fatalf("expected linux to be accepted, got %v", err)
+func TestGuardRejectsLinux(t *testing.T) {
+	if err := system.EnsureSupportedOS("linux"); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("expected linux to be rejected, got %v", err)
 	}
 }
 
-func TestGuardRejectsUnknownUnsupportedLinuxDistro(t *testing.T) {
+func TestGuardRejectsUnknownLinuxDistro(t *testing.T) {
 	profile := system.PlatformProfile{OS: "linux", LinuxDistro: system.LinuxDistroUnknown, Supported: false}
 	err := system.EnsureSupportedPlatform(profile)
 	if err == nil {
 		t.Fatalf("expected error for unsupported linux distro")
 	}
-	if !errors.Is(err, system.ErrUnsupportedLinuxDistro) {
-		t.Fatalf("expected ErrUnsupportedLinuxDistro, got %v", err)
+	if !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("expected ErrUnsupportedOS, got %v", err)
 	}
 }
 
-func TestGuardAcceptsUbuntuProfile(t *testing.T) {
+func TestGuardRejectsUbuntuProfile(t *testing.T) {
 	profile := system.PlatformProfile{OS: "linux", LinuxDistro: system.LinuxDistroUbuntu, PackageManager: "apt", Supported: true}
-	if err := system.EnsureSupportedPlatform(profile); err != nil {
-		t.Fatalf("expected ubuntu profile to be accepted, got %v", err)
+	if err := system.EnsureSupportedPlatform(profile); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("expected ubuntu profile to be rejected, got %v", err)
 	}
 }
 
-func TestGuardAcceptsArchProfile(t *testing.T) {
+func TestGuardRejectsArchProfile(t *testing.T) {
 	profile := system.PlatformProfile{OS: "linux", LinuxDistro: system.LinuxDistroArch, PackageManager: "pacman", Supported: true}
-	if err := system.EnsureSupportedPlatform(profile); err != nil {
-		t.Fatalf("expected arch profile to be accepted, got %v", err)
+	if err := system.EnsureSupportedPlatform(profile); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("expected arch profile to be rejected, got %v", err)
 	}
 }
 
-func TestGuardAcceptsFedoraProfile(t *testing.T) {
+func TestGuardRejectsFedoraProfile(t *testing.T) {
 	profile := system.PlatformProfile{OS: "linux", LinuxDistro: system.LinuxDistroFedora, PackageManager: "dnf", Supported: true}
-	if err := system.EnsureSupportedPlatform(profile); err != nil {
-		t.Fatalf("expected fedora profile to be accepted, got %v", err)
+	if err := system.EnsureSupportedPlatform(profile); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("expected fedora profile to be rejected, got %v", err)
 	}
 }
 
@@ -336,17 +336,17 @@ func TestGuardFlowMacOSProfileExplicitlyPasses(t *testing.T) {
 	}
 }
 
-func TestGuardFlowLinuxUbuntuProfileExplicitlyPasses(t *testing.T) {
+func TestGuardFlowLinuxUbuntuProfileExplicitlyRefuses(t *testing.T) {
 	profile := system.PlatformProfile{OS: "linux", LinuxDistro: system.LinuxDistroUbuntu, PackageManager: "apt", Supported: true}
-	if err := system.EnsureSupportedPlatform(profile); err != nil {
-		t.Fatalf("Ubuntu profile should pass guard, got %v", err)
+	if err := system.EnsureSupportedPlatform(profile); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("Ubuntu profile should fail guard, got %v", err)
 	}
 }
 
-func TestGuardFlowLinuxArchProfileExplicitlyPasses(t *testing.T) {
+func TestGuardFlowLinuxArchProfileExplicitlyRefuses(t *testing.T) {
 	profile := system.PlatformProfile{OS: "linux", LinuxDistro: system.LinuxDistroArch, PackageManager: "pacman", Supported: true}
-	if err := system.EnsureSupportedPlatform(profile); err != nil {
-		t.Fatalf("Arch profile should pass guard, got %v", err)
+	if err := system.EnsureSupportedPlatform(profile); !errors.Is(err, system.ErrUnsupportedOS) {
+		t.Fatalf("Arch profile should fail guard, got %v", err)
 	}
 }
 

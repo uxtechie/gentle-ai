@@ -110,6 +110,13 @@ func (b *battery) compilePublishedSchemas() (map[string]*jsonschema.Schema, []st
 			if id == "" {
 				return nil, nil, fmt.Errorf("%s: schema document has no $id", path)
 			}
+			if !strings.Contains(id, "://") {
+				// Published selection schemas may use an envelope identity as $id.
+				// Bind their relative $refs to the schema's actual directory when
+				// compiling in memory, without changing published contract bytes.
+				id = "https://gentle-ai.dev/contracts/review-integration/" + version + "/schemas/" + filepath.Base(path)
+				body["$id"] = id
+			}
 			if err := compiler.AddResource(id, document); err != nil {
 				return nil, nil, fmt.Errorf("%s: %w", path, err)
 			}

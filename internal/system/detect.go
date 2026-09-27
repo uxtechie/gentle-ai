@@ -83,7 +83,7 @@ type DetectionResult struct {
 }
 
 func IsSupportedOS(goos string) bool {
-	return goos == "darwin" || goos == "linux" || goos == "windows"
+	return goos == "darwin"
 }
 
 func Detect(ctx context.Context) (DetectionResult, error) {
@@ -129,6 +129,7 @@ func detectFromInputs(goos, arch, shell, linuxOSRelease string, tools map[string
 	}
 
 	profile := resolvePlatformProfile(goos, linuxOSRelease, tools)
+	profile.Supported = profile.Supported && IsSupportedOS(goos)
 
 	return DetectionResult{
 		System: SystemInfo{

@@ -3,6 +3,7 @@ package agentguidance
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -268,12 +269,27 @@ func TestInjectRoutingStaysContainedUnderHostileEnvironment(t *testing.T) {
 				}
 			}
 
-			entries, err := os.ReadDir(hostile)
+			// Rendering the OpenCode review contract probes the installed runtime's
+			// version. The host binary may create its empty XDG config directory on
+			// that probe; routing must still write no configuration or guidance there.
+			err = filepath.WalkDir(hostile, func(path string, entry os.DirEntry, walkErr error) error {
+				if walkErr != nil {
+					return walkErr
+				}
+				if path == hostile {
+					return nil
+				}
+				rel, relErr := filepath.Rel(hostile, path)
+				if relErr != nil {
+					return relErr
+				}
+				if entry.IsDir() && (rel == "xdg" || rel == filepath.Join("xdg", "opencode")) {
+					return nil
+				}
+				return fmt.Errorf("unexpected config entry %q", rel)
+			})
 			if err != nil {
-				t.Fatalf("ReadDir(hostile) error = %v", err)
-			}
-			if len(entries) != 0 {
-				t.Fatalf("InjectRouting(%q) created %d entries under the hostile config root", agent.ID, len(entries))
+				t.Fatalf("InjectRouting(%q) wrote outside the target dir: %v", agent.ID, err)
 			}
 		})
 	}

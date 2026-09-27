@@ -85,11 +85,9 @@ jobs:
       - name: Verify tag, main, trust anchors, and module immutability
         run: ./scripts/release-preflight.sh
 
-      - name: Unit tests
-        run: go test ./...
-
-      - name: Go vet
-        run: go vet ./...
+      # The macOS CI workflow gates this exact commit before publication.
+      # Running product tests on this Linux publishing host would test an
+      # unsupported platform rather than the supported macOS build.
 
       - name: Go format
         run: go run ./internal/gofmtcheck

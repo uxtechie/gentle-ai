@@ -9,6 +9,20 @@ import (
 	"testing"
 )
 
+func TestPublishedSchemasCompileWithRelativeSelectionIdentity(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	compiled, _, err := (&battery{repoRoot: root}).compilePublishedSchemas()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if compiled["gentle-ai.review-intended-untracked-selection/v1"] == nil {
+		t.Fatal("published intended-untracked selection schema was not indexed")
+	}
+}
+
 func TestOpenCodeHookHarnessRequiresExactProviderOwnedTask(t *testing.T) {
 	for _, forbidden := range []string{"binding_pairs", "Object.fromEntries", "config.body"} {
 		if strings.Contains(hookHarness, forbidden) {
@@ -100,6 +114,16 @@ func TestHostPiLaneRefusesRejectedEnvironmentBeforeLaunch(t *testing.T) {
 }
 
 func TestPiLastEventClosureAdmitsAndReentersCorrection(t *testing.T) {
+	t.Setenv("GO_WANT_PI_RELAY_STATUS", "1")
+	closureJSON := `{"schema":"gentle-ai.review-last-event-closure/v1","state":"correction_required","lineage_id":"provider-lineage","status_continuation":{"operation":"review.status","arguments":[{"token":"--lineage=provider-lineage"},{"token":"--cursor=provider-owned"}]}}`
+	closure := (&battery{}).record("result-artifact", []byte(closureJSON))
+	b := &battery{binary: os.Args[0]}
+	if !admittedCapture(closure) || !b.hostCorrectionReentry("test", "lifecycle correction re-entry", t.TempDir(), nil, closure) {
+		t.Fatalf("closure/re-entry = %#v/%#v", closure, b.checks)
+	}
+}
+
+func TestMain(m *testing.M) {
 	if os.Getenv("GO_WANT_PI_RELAY_STATUS") == "1" {
 		want := []string{os.Args[0], "review", "status", "--lineage=provider-lineage", "--cursor=provider-owned"}
 		if strings.Join(os.Args, "\x00") != strings.Join(want, "\x00") {
@@ -109,13 +133,7 @@ func TestPiLastEventClosureAdmitsAndReentersCorrection(t *testing.T) {
 		fmt.Print(`{"next_transition":{"reason_code":"correction_plan_required"}}`)
 		os.Exit(0)
 	}
-	t.Setenv("GO_WANT_PI_RELAY_STATUS", "1")
-	closureJSON := `{"schema":"gentle-ai.review-last-event-closure/v1","state":"correction_required","lineage_id":"provider-lineage","status_continuation":{"operation":"review.status","arguments":[{"token":"--lineage=provider-lineage"},{"token":"--cursor=provider-owned"}]}}`
-	closure := (&battery{}).record("result-artifact", []byte(closureJSON))
-	b := &battery{binary: os.Args[0]}
-	if !admittedCapture(closure) || !b.hostCorrectionReentry("test", "lifecycle correction re-entry", t.TempDir(), nil, closure) {
-		t.Fatalf("closure/re-entry = %#v/%#v", closure, b.checks)
-	}
+	os.Exit(m.Run())
 }
 func TestHostPiCorrectionCandidateExecutesAuthorizationBypass(t *testing.T) {
 	if testing.Short() {
