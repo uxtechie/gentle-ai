@@ -7,13 +7,14 @@
 
 <h1>Gentle-AI™</h1>
 
+<p><strong>Independent fork of <a href="https://github.com/Gentleman-Programming/gentle-ai">Gentle AI</a>.</strong><br/>
+This fork supports macOS and OpenCode v2 only. Other operating systems and AI agents are outside its support scope.</p>
+
 <p><strong>The deterministic engineering environment for the AI agent you already use.</strong></p>
 
 <p>
-<a href="https://github.com/Gentleman-Programming/gentle-ai/releases"><img src="https://img.shields.io/github/v/release/Gentleman-Programming/gentle-ai?style=for-the-badge&labelColor=1A1218&color=F095C8" alt="Release"></a>
-<a href="https://github.com/Gentleman-Programming/gentle-ai/stargazers"><img src="https://img.shields.io/github/stars/Gentleman-Programming/gentle-ai?style=for-the-badge&labelColor=1A1218&color=F095C8" alt="Stars"></a>
-<img src="https://img.shields.io/badge/agents-16-F095C8?style=for-the-badge&labelColor=1A1218" alt="16 agents">
 <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Apple%20Silicon%20%C2%B7%20Intel-D7A0B8?style=for-the-badge&labelColor=1A1218" alt="Platform: macOS">
+<img src="https://img.shields.io/badge/agent-OpenCode%20v2-F095C8?style=for-the-badge&labelColor=1A1218" alt="Supported agent: OpenCode v2">
 <a href="LICENSE"><img src="https://img.shields.io/badge/MIT-D7A0B8?style=for-the-badge&labelColor=1A1218" alt="License: MIT"></a>
 </p>
 
@@ -48,7 +49,7 @@ and no way to prove what it did beyond asking you to read every line.
 <br/>
 -->
 
-<sub><strong>If Gentle-AI made your agent worth trusting, a star helps other people find it.</strong></sub>
+<sub>Upstream project history:</sub>
 
 <!--
   sealed_token is a GitHub fine-grained token encrypted against Star History's
@@ -68,26 +69,9 @@ and no way to prove what it did beyond asking you to read every line.
 
 <br/>
 
-<sub><strong>WORKS WITH THE AGENT YOU ALREADY HAVE</strong></sub>
+<sub><strong>SUPPORTED SCOPE: macOS · OpenCode v2</strong></sub>
 
-<strong><a href="docs/agents.md#pi">Pi</a></strong> ·
-<strong><a href="docs/agents.md#opencode">OpenCode</a></strong> ·
-<strong><a href="docs/agents.md#claude-code">Claude Code</a></strong> ·
-<strong><a href="docs/agents.md#codex">Codex</a></strong> ·
-<strong><a href="docs/agents.md#cursor">Cursor</a></strong> ·
-<strong><a href="docs/agents.md#vs-code-copilot">VS Code Copilot</a></strong> ·
-<strong><a href="docs/agents.md#gemini-cli">Gemini CLI</a></strong> ·
-<strong><a href="docs/agents.md#kilo-code">Kilo Code</a></strong><br/>
-<strong><a href="docs/agents.md#kimi-code">Kimi Code</a></strong> ·
-<strong><a href="docs/agents.md#kiro-ide">Kiro IDE</a></strong> ·
-<strong><a href="docs/agents.md#qwen-code">Qwen Code</a></strong> ·
-<strong><a href="docs/agents.md#hermes">Hermes</a></strong> ·
-<strong><a href="docs/agents.md#antigravity">Antigravity</a></strong> ·
-<strong><a href="docs/agents.md#windsurf">Windsurf</a></strong> ·
-<strong><a href="docs/agents.md#openclaw">OpenClaw</a></strong> ·
-<strong><a href="docs/agents.md#trae">Trae</a></strong>
-
-<sub>16 integrations · native configuration · <a href="docs/agents.md">compare capabilities →</a></sub>
+<strong><a href="docs/agents.md#opencode">OpenCode v2</a></strong>
 
 </div>
 
@@ -145,23 +129,11 @@ A model that guesses the next step guesses differently tomorrow, and differently
 
 ---
 
-### Gentle Shell — A complete workspace for Pi
+### OpenCode v2 — The supported agent
 
-<img width="100%" src="docs/assets/features/gentle-shell.png" alt="Gentle Shell development workspace with the todo list and live context and spend information" />
+This fork focuses support on OpenCode v2 on macOS. Other integrations inherited from the upstream project are not supported here.
 
-Gentle Shell is a separate Pi integration package. Gentle AI configures supported agents; Gentle Shell owns its own Pi runtime, agents, and interface. Installing or updating this binary does not itself establish Pi behavior parity.
-
-**[Docs →](docs/pi.md)**
-
----
-
-### 16 agents — Keep the agent you already use
-
-<img width="100%" src="docs/assets/features/agents.png" alt="The installer configuring multiple agents" />
-
-Gentle-AI brings its shared workflow to Pi, OpenCode, Claude Code, Codex, and twelve more agents. Each integration uses that agent's native capabilities, so available features such as delegation and RDD review can differ.
-
-**[Docs →](docs/agents.md)**
+**[OpenCode integration →](docs/agents.md#opencode)**
 
 ---
 
@@ -187,22 +159,17 @@ Gentle-AI brings its shared workflow to Pi, OpenCode, Claude Code, Codex, and tw
 
 ## Get started
 
-```bash
-# macOS (Homebrew)
-brew install gentleman-programming/tap/gentle-ai
-
-# macOS (curl)
-curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash
-```
+This fork is for macOS with OpenCode v2. The upstream Homebrew formula and installer install the upstream project, not this fork. To try this checkout locally:
 
 ```bash
-gentle-ai          # pick your agents, components and persona
-gentle-ai doctor   # verify — read-only, changes nothing
+git clone https://github.com/uxtechie/gentle-ai.git
+cd gentle-ai
+go run ./cmd/gentle-ai install --dry-run
 ```
 
-Then use your agent normally. Your configs are snapshotted before every write, and **Gentle-AI never installs an AI agent for you** — it configures what you already have.
+The dry run previews changes without installing anything. OpenCode v2 is this fork's support target; runtime compatibility has not yet been verified against v2. The source still contains an OpenCode v1 pin used by CI, so do not treat this scope statement as a v2 compatibility guarantee.
 
-> **Beta channel, signature verification and per-distro prerequisites: [Quickstart →](docs/quickstart.md)**
+> **Local setup and prerequisites: [Quickstart →](docs/quickstart.md)** (some instructions there still describe upstream releases and other agents).
 
 <div align="right"><a href="#top">Back to top</a></div>
 
@@ -214,7 +181,7 @@ Then use your agent normally. Your configs are snapshotted before every write, a
 | :--- | :--- |
 | **[Intended Usage](docs/intended-usage.md)** | The mental model. If you read one page, read this one. |
 | **[Quickstart](docs/quickstart.md)** · **[Usage](docs/usage.md)** | Install, prerequisites, every CLI command and flag |
-| **[Agents](docs/agents.md)** | Feature matrix and per-agent notes for all 16 |
+| **[OpenCode](docs/agents.md#opencode)** | OpenCode integration notes; other agents documented there are inherited from upstream and unsupported by this fork |
 | **[ODD](docs/usage.md#organic-driven-development-odd)** · **[Routing](docs/trigger-rules.md)** | Everyday direct and delegated work |
 | **[Review](docs/review-integration.md)** · **[Architecture](docs/architecture/organic-rdd.md)** | The RDD contract, lifecycle and threat model |
 | **[Engram](docs/engram.md)** · **[Components](docs/components.md)** | Memory commands, skills, presets and personas |
@@ -225,9 +192,9 @@ Then use your agent normally. Your configs are snapshotted before every write, a
 
 <div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
 
-## Community
+## Upstream community
 
-Everything labelled [`up-for-grabs`](https://github.com/Gentleman-Programming/gentle-ai/issues?q=is%3Aissue+is%3Aopen+label%3Aup-for-grabs) is scoped, approved and unclaimed — pick one and it's yours.
+The following community links belong to the upstream project, not this fork.
 
 <div align="center">
 
@@ -249,9 +216,9 @@ Everything labelled [`up-for-grabs`](https://github.com/Gentleman-Programming/ge
 
 <div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
 
-## Built with Gentle-AI
+## Upstream "Built with Gentle-AI" badge
 
-Shipped something with Gentle-AI? Wear the rose. Paste this into your README and the badge links back here:
+The following badge links to the upstream project:
 
 <div align="center">
 
@@ -273,17 +240,15 @@ Prefer plain Markdown?
 [![Built with Gentle-AI](https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/docs/assets/brand/built-with-gentle-ai.png)](https://github.com/Gentleman-Programming/gentle-ai)
 ```
 
-Keep the image URL exactly as shown — it is how I find and feature the projects that carry the badge.
+These URLs refer to the upstream project, not this fork.
 
 <div align="right"><a href="#top">Back to top</a></div>
 
 <div align="center"><img src="docs/assets/brand/rose.png" width="28" alt="" /></div>
 
-## About the author
+## Upstream attribution
 
-Built by [Alan Buscaglia](https://github.com/Gentleman-Programming) (Gentleman Programming): 15 years of enterprise architecture, a community of thousands of developers testing these tools daily, and one rule for AI-assisted work — **verifying beats generating**.
-
-Teams adopting AI and finding it isn't working — resistance, everyone prompting their own way, no shared quality bar — can reach out about **[engagements built on these same open-source tools →](docs/consulting.md)**.
+The original Gentle AI project was created by [Alan Buscaglia](https://github.com/Gentleman-Programming) (Gentleman Programming). This fork is independent and is not an official upstream release.
 
 <div align="center">
 
