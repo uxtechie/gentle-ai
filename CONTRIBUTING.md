@@ -126,10 +126,10 @@ go build -o gentle-ai ./cmd/gentle-ai
 
 ### Unit Tests
 
-Run the full unit test suite:
+Run the full Go test suite on macOS (the same command as CI):
 
 ```bash
-go test ./...
+python3 scripts/run_go_tests.py
 ```
 
 Run tests for a specific package:
@@ -144,17 +144,16 @@ Run with verbose output:
 go test -v ./...
 ```
 
-### Local pre-push checks
-
-Install [Lefthook](https://lefthook.dev/installation/) and activate this checkout's hook once:
+The runner verifies that every CLI test belongs to exactly one of three parallel groups and runs every other package once. It sets `XDG_CONFIG_HOME` to a temporary directory for each test process and clears OpenCode's explicit config overrides without changing your shell or real OpenCode config. For a targeted Go test outside the runner, isolate it the same way:
 
 ```bash
-lefthook install
+(
+  config_dir=$(mktemp -d)
+  trap 'rm -rf -- "$config_dir"' EXIT
+  XDG_CONFIG_HOME="$config_dir" env -u OPENCODE_CONFIG_DIR -u OPENCODE_CONFIG \
+    go test ./internal/components/uninstall -run '^TestUninstallOpenCodeFamilyManagedAgents$'
+)
 ```
-
-Pushing changed files then runs `scripts/pre-push-quality.sh`. To run it without pushing, use `lefthook run pre-push --force` (otherwise Lefthook skips a manual run with no push files). Commit your changes first: the hook requires a clean worktree so it tests the candidate being pushed. It checks Go formatting, vet and tests; PR workflow scripts; installer and OpenCode V2 contracts; the separate benchmark module **and its driven journeys**; dead code; native Darwin release blockers; and the deterministic cross-lane battery. It requires macOS, Go, Node/npm, Python and jq. The SDK contract test also fetches pinned npm packages. A missing prerequisite or failing check blocks the push.
-
-Output includes each check's elapsed time. Root Go tests run through `scripts/run_go_tests.py`: it verifies that every CLI test belongs to exactly one of three parallel groups and runs every other package once. On failure, the last 20 log lines and paths to the complete logs, per-test Go events, and benchmark results are printed. The hook makes no reviewer-model calls. CI also runs real-agent E2E with installed runtimes on macOS.
 
 ### Native macOS E2E Tests
 
