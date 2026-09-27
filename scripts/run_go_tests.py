@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Run every Go package test, sharding the large CLI suite without omissions."""
 
+import os
 import re
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from tempfile import TemporaryDirectory
 from threading import Lock
 
 
@@ -28,17 +30,26 @@ def check_cli_coverage(listing):
     return len(names)
 
 
+def test_environment(config_dir):
+    env = os.environ.copy()
+    env["XDG_CONFIG_HOME"] = config_dir
+    for key in ("OPENCODE_CONFIG_DIR", "OPENCODE_CONFIG", "PI_CODING_AGENT_DIR"):
+        env.pop(key, None)
+    return env
+
+
 def run_test_group(name, command, output_lock):
     with output_lock:
         print(f"Go test group {name}: starting", file=sys.stderr, flush=True)
     start = time.monotonic()
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               text=True, errors="replace")
-    for line in process.stdout:
-        with output_lock:
-            sys.stdout.write(line)
-            sys.stdout.flush()
-    status = process.wait()
+    with TemporaryDirectory(prefix="gentle-ai-go-test-config-") as config_dir:
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   text=True, errors="replace", env=test_environment(config_dir))
+        for line in process.stdout:
+            with output_lock:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+        status = process.wait()
     with output_lock:
         print(f"Go test group {name}: {'PASS' if status == 0 else 'FAIL'} "
               f"({time.monotonic() - start:.1f}s)", file=sys.stderr,
